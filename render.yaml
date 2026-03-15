@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: instagram-reels-bot
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node bot.js
+    envVars:
+      - key: IG_USER_ID
+        sync: false
+      - key: ACCESS_TOKEN
+        sync: false
+      - key: VIDEO_URL
+        sync: false
+      - key: CRON_SCHEDULE
+        value: "0 9 * * *"
+      - key: TIMEZONE
+        value: Asia/Jakarta
+      - key: MAX_RETRY
+        value: "3"
+      - key: RETRY_DELAY
+        value: "5000"
+      - key: POLLING_INTERVAL
+        value: "10000"
+      - key: MAX_POLLING_ATTEMPTS
+        value: "12"
+      - key: CAPTION_TEMPLATE
+        value: "for my self day {day}"
+      - key: CAPTION_TAGS
+        value: "#everyday #daily"
+      - key: NODE_ENV
+        value: production
