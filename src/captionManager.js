@@ -1,5 +1,7 @@
 // ================================================
 // captionManager.js - Auto-generate caption "Day N"
+// Dual persistence: file (lokal) + env CURRENT_DAY
+// agar aman di Render.com (filesystem ephemeral)
 // ================================================
 
 const fs = require("fs");
@@ -15,24 +17,36 @@ if (!fs.existsSync(DATA_DIR)) {
 }
 
 /**
- * Load day counter dari file
- * @returns {number} - Hari terakhir yang sudah diupload
+ * Load day counter.
+ * Prioritas: file lokal → env var CURRENT_DAY → 0
  */
 function loadDayCounter() {
-  if (!fs.existsSync(DAY_COUNTER_FILE)) {
-    return 0; // Belum pernah upload, mulai dari 0
+  // 1. Coba baca dari file lokal
+  if (fs.existsSync(DAY_COUNTER_FILE)) {
+    try {
+      const raw = fs.readFileSync(DAY_COUNTER_FILE, "utf8");
+      const data = JSON.parse(raw);
+      if (data.currentDay) {
+        logger.info(`Day counter dari file: ${data.currentDay}`);
+        return data.currentDay;
+      }
+    } catch { /* lanjut ke fallback */ }
   }
-  try {
-    const raw = fs.readFileSync(DAY_COUNTER_FILE, "utf8");
-    const data = JSON.parse(raw);
-    return data.currentDay || 0;
-  } catch {
-    return 0;
+
+  // 2. Fallback: baca dari env CURRENT_DAY
+  // (set manual di Render dashboard jika redeploy)
+  const envDay = parseInt(process.env.CURRENT_DAY);
+  if (!isNaN(envDay) && envDay > 0) {
+    logger.info(`Day counter dari env CURRENT_DAY: ${envDay}`);
+    return envDay;
   }
+
+  logger.info("Day counter mulai dari 0 (pertama kali)");
+  return 0;
 }
 
 /**
- * Simpan day counter ke file
+ * Simpan day counter ke file lokal + process.env
  * @param {number} day - Nomor hari yang baru saja diupload
  */
 function saveDayCounter(day) {
@@ -40,7 +54,14 @@ function saveDayCounter(day) {
     currentDay: day,
     lastUpload: new Date().toISOString(),
   };
-  fs.writeFileSync(DAY_COUNTER_FILE, JSON.stringify(data, null, 2), "utf8");
+  try {
+    fs.writeFileSync(DAY_COUNTER_FILE, JSON.stringify(data, null, 2), "utf8");
+    logger.info(`Day counter disimpan ke file: ${day}`);
+  } catch (err) {
+    logger.warn(`Gagal simpan counter ke file: ${err.message}`);
+  }
+  // Simpan juga ke process.env agar bertahan selama proses hidup
+  process.env.CURRENT_DAY = String(day);
 }
 
 /**
