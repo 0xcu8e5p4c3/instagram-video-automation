@@ -1,0 +1,34 @@
+{
+  "name": "instagram-reels-auto-upload-bot",
+  "version": "1.0.0",
+  "description": "Bot otomatis untuk upload Instagram Reels menggunakan Instagram Graph API",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "test": "node bot.js --test",
+    "now": "node bot.js --now",
+    "validate": "node bot.js --validate",
+    "dev": "nodemon bot.js --now"
+  },
+  "keywords": [
+    "instagram",
+    "reels",
+    "automation",
+    "bot",
+    "instagram-api",
+    "graph-api"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
