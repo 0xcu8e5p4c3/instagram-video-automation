@@ -4,8 +4,34 @@
 
 require("dotenv").config();
 const cron = require("node-cron");
+const http = require("http");
 const logger = require("./src/logger");
 const { uploadReels, validateConfig } = require("./src/uploader");
+
+// ============ HTTP SERVER (Render free plan) ============
+// Render free plan butuh web service dengan port terbuka.
+// Server ini hanya menjawab ping agar bot tidak di-sleep.
+const PORT = process.env.PORT || 3000;
+const server = http.createServer((req, res) => {
+  const { loadDayCounter } = require("./src/captionManager");
+  const day = loadDayCounter();
+  const uptime = Math.floor(process.uptime() / 60);
+  res.writeHead(200, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      status: "running",
+      bot: "Instagram Reels Auto-Upload",
+      currentDay: day,
+      nextUpload: process.env.CRON_SCHEDULE || "0 9 * * *",
+      timezone: process.env.TIMEZONE || "Asia/Jakarta",
+      uptimeMinutes: uptime,
+      timestamp: new Date().toISOString(),
+    })
+  );
+});
+server.listen(PORT, () => {
+  logger.info(`🌐 HTTP server aktif di port ${PORT} (untuk Render keep-alive)`);
+});
 
 // ============ KONFIGURASI ============
 const CONFIG = {
@@ -69,7 +95,9 @@ function setupCronJob() {
     process.exit(1);
   }
 
-  logger.info(`⏰ Cron job aktif dengan jadwal: "${CRON_SCHEDULE}" (${TIMEZONE})`);
+  logger.info(
+    `⏰ Cron job aktif dengan jadwal: "${CRON_SCHEDULE}" (${TIMEZONE})`
+  );
 
   // Konversi ke format yang mudah dibaca
   const schedule = parseCronSchedule(CRON_SCHEDULE);
@@ -118,7 +146,10 @@ function parseCronSchedule(cronExpr) {
     minute !== "*" &&
     hour !== "*"
   ) {
-    return `Setiap hari jam ${hour.padStart(2, "0")}:${minute.padStart(2, "0")} ${TIMEZONE}`;
+    return `Setiap hari jam ${hour.padStart(2, "0")}:${minute.padStart(
+      2,
+      "0"
+    )} ${TIMEZONE}`;
   }
 
   return cronExpr;
@@ -163,7 +194,7 @@ async function main() {
   setupCronJob();
 
   logger.info("Bot aktif dan menunggu jadwal cron berikutnya...");
-  logger.info('Tekan Ctrl+C untuk menghentikan bot.\n');
+  logger.info("Tekan Ctrl+C untuk menghentikan bot.\n");
 
   // Tampilkan waktu sekarang
   const now = new Date().toLocaleString("id-ID", {
