@@ -3,14 +3,11 @@
 // ================================================
 
 require("dotenv").config();
-const cron = require("node-cron");
 const http = require("http");
-const logger = require("./src/logger");
-const { uploadReels, validateConfig } = require("./src/uploader");
 
-// ============ HTTP SERVER (Render free plan) ============
-// Render free plan butuh web service dengan port terbuka.
-// Server ini hanya menjawab ping agar bot tidak di-sleep.
+// ============ HTTP SERVER — HARUS PALING ATAS ============
+// Render melakukan port scan segera setelah start.
+// Server ini WAJIB listen duluan sebelum proses lain.
 const PORT = process.env.PORT || 3000;
 const server = http.createServer((req, res) => {
   const { loadDayCounter } = require("./src/captionManager");
@@ -29,9 +26,14 @@ const server = http.createServer((req, res) => {
     })
   );
 });
-server.listen(PORT, () => {
-  logger.info(`🌐 HTTP server aktif di port ${PORT} (untuk Render keep-alive)`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`🌐 HTTP server aktif di port ${PORT}`);
 });
+
+// ============ LOAD DEPENDENCIES ============
+const cron = require("node-cron");
+const logger = require("./src/logger");
+const { uploadReels, validateConfig } = require("./src/uploader");
 
 // ============ KONFIGURASI ============
 const CONFIG = {
